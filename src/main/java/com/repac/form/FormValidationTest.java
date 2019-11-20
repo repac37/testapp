@@ -1,5 +1,6 @@
 package com.repac.form;
 
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.form.AjaxButton;
 import org.apache.wicket.markup.html.WebPage;
@@ -29,12 +30,23 @@ public class FormValidationTest extends WebPage {
         TextField<String> name = new RequiredTextField<String>("name", new Model<String>());
         TextField<Integer> age = new RequiredTextField<Integer>("age", new Model<Integer>());
         TextField<String> email = new RequiredTextField<String>("email", new Model<String>());
-        TextField<String> zipcode = new RequiredTextField<String>("zipcode", new Model<String>());
+        TextField<String> zipcode = new RequiredTextField<String>("zipcode", new Model<String>()){
+
+            @Override
+            protected void onInvalid() {
+                super.onInvalid();
+                if(hasErrorMessage())
+                    add(AttributeModifier.replace("style",  "box-shadow: inset 0 0 1px 1px red;"));
+                else
+                    add(AttributeModifier.replace("style",  ""));
+            }
+        };
+        zipcode.setOutputMarkupId(true);
 
         age.setType(Integer.class);
         age.add(RangeValidator.range(18,60));
-
-        email.add(EmailAddressValidator.getInstance());
+        EmailAddressValidator  emailAddressValidator = EmailAddressValidator.getInstance();
+        email.add(emailAddressValidator);
 
         zipcode.add(new ZipCodeVaildator());
 
@@ -45,15 +57,23 @@ public class FormValidationTest extends WebPage {
             }
         };
 
-        Button ajaxButton = new AjaxButton("submitButton") {
+        AjaxButton ajaxButton = new AjaxButton("submitButton") {
             @Override
             protected void onSubmit(AjaxRequestTarget target) {
+
                 super.onSubmit(target);
+                target.add(feedbackPanel);
             }
 
             @Override
             protected void onError(AjaxRequestTarget target) {
                 super.onError(target);
+//                if (zipcode.hasFeedbackMessage()) {
+//                    zipcode.add(AttributeModifier.replace("style", "border: 5px solid red;"));
+//                } else {
+//                    zipcode.add(AttributeModifier.replace("style", ""));
+//                }
+                target.add(zipcode);
                 target.add(feedbackPanel);
             }
         };
@@ -79,4 +99,6 @@ public class FormValidationTest extends WebPage {
             }
         }
     }
+
 }
+
